@@ -14,7 +14,7 @@ class EventListItem extends Component {
                         <Item>
                             <Item.Image size="tiny" circular src={event.hostPhotoURL} />
                             <Item.Content>
-                                <Item.Header as="a">Event Title</Item.Header>
+                                <Item.Header as="a">{event.title}</Item.Header>
                                 <Item.Description>
                                     Hosted by {event.hostedBy}
                                 </Item.Description>
@@ -24,14 +24,14 @@ class EventListItem extends Component {
                 </Segment>
                 <Segment>
                     <span>
-                        <Icon name="clock" /> {format(event.date, 'dddd Do MMMM')} at {' '} {format(event.date, 'HH:mm')} |
+                        <Icon name="clock" /> {format(event.date.toDate(), 'dddd Do MMMM')} at {' '} {format(event.date.toDate(), 'HH:mm')} |
                     <Icon name="marker" /> {event.venue}
                   </span>
                 </Segment>
                 <Segment secondary>
                     <List horizontal>
-                    {event.attendees && event.attendees.map((attendee) => (
-                        <EventListAttendee key={attendee.id} attendee={attendee}/>
+                    {event.attendees && Object.values(event.attendees).map((attendee, index) => (
+                        <EventListAttendee key={index} attendee={attendee}/>
                     ))}
                         
                     </List>
