@@ -1,13 +1,23 @@
 import React from 'react'
 import { Grid } from 'semantic-ui-react';
+import { connect } from 'react-redux'
 import { Switch, Route, Redirect } from 'react-router-dom';
 import SettingsNav from './SettingsNav';
 import BasicPage from './BasicPage';
 import AboutPage from './AboutPage';
 import PhotosPage from './PhotosPage';
 import AccountPage from './AccountPage';
+import {updatePassword} from '../../auth/authActions';
 
-const SettingsDashboard = () => {
+const actions = {
+  updatePassword
+}
+
+const mapState = (state) => ({
+  providerId: state.firebase.auth.providerData[0].providerId
+})
+
+const SettingsDashboard = ({updatePassword, providerId}) => {
   return (
 <Grid>
   <Grid.Column width={12}>
@@ -15,7 +25,7 @@ const SettingsDashboard = () => {
     <Redirect exact from='/settings' to='/settings/basic'/>
     <Route path='/settings/basic' component={BasicPage} />
     <Route path='/settings/about' component={AboutPage} />
-    <Route path='/settings/account' component={AccountPage} />
+    <Route path='/settings/account' render={() => <AccountPage updatePassword={updatePassword} providerId={providerId} />} />
     <Route path='/settings/photos' component={PhotosPage} />
   </Switch>
   </Grid.Column>
@@ -26,4 +36,4 @@ const SettingsDashboard = () => {
   )
 }
 
-export default SettingsDashboard
+export default connect(mapState, actions)(SettingsDashboard);
