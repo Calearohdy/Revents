@@ -20,7 +20,7 @@ const SettingsNav = () => {
           color="grey"
           content="Account"
         />
-        <Menu.Item as={NavLink} to='/settings/account'>My Account</Menu.Item>
+        <Menu.Item as={NavLink} to='/settings/account'>Password Reset</Menu.Item>
       </Menu>
     </Grid.Column>
   )
