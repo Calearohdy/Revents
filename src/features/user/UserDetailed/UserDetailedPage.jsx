@@ -3,29 +3,37 @@ import {Button, Card, Grid, Header, Icon, Image, Item, List, Menu, Segment} from
 import { Link } from 'react-router-dom'
 import { compose } from 'redux'
 import { connect } from 'react-redux';
-import { firestoreConnect } from 'react-redux-firebase';
+import { firestoreConnect, isEmpty } from 'react-redux-firebase';
 import { differenceInYears, format } from 'date-fns';
+import { userDetailedQuery } from '../userQueries';
+import Lazyload from 'react-lazyload';
+import LoadingComponent from '../../../app/layout/LoadingComponent'
 
-const query = ({ auth }) => { // listener
-  return [
-    {
-      collection: 'users',
-      doc: auth.uid,
-      subcollections: [{ collection: 'photos' }],
-      storeAs: 'photos'
+// logic in state to check User profile
+const mapState = (state, ownProps) => { // ownProps gives access to props from Parent component
+    let userUid = null;
+    let profile = {};
+
+    if(ownProps.match.params.id === state.auth.id) { // checks to see if you are clicking on your user id or another attendee
+        profile = state.firebase.profile
+    } else {
+        profile = !isEmpty(state.firestore.ordered.profile) && state.firestore.ordered.profile[0] // check profile isn't empty and isn't your profile
+        userUid = ownProps.match.params.id
     }
-  ]
-}
 
-const mapState = (state) => ({
-  auth: state.firebase.auth,
-  profile: state.firebase.profile,
-  photos: state.firestore.ordered.photos
-})
+    return {
+        auth: state.firebase.auth,
+        profile,
+        userUid,
+        photos: state.firestore.ordered.photos,
+        requesting: state.firestore.status.requesting
+    }
+
+}
 class UserDetailedPage extends Component {
 
     render() {
-      const { profile, photos } = this.props;
+      const { profile, photos, auth, match, requesting } = this.props;
       let age;
       if (profile.dateOfBirth) {
         age = differenceInYears(Date.now(), profile.dateOfBirth.toDate())
@@ -39,6 +47,10 @@ class UserDetailedPage extends Component {
         created = 'Error'
       }
 
+      const isCurrentUser = auth.uid === match.params.id;
+      const loading = Object.values(requesting).some(a => a === true);
+
+      if (loading) return <LoadingComponent />
         return (
             <Grid>
                 <Grid.Column width={16}>
@@ -90,7 +102,12 @@ class UserDetailedPage extends Component {
                 </Grid.Column>
                 <Grid.Column width={4}>
                     <Segment>
-                        <Button as={Link} to='/settings' color='teal' fluid basic content='Edit Profile'/>
+                        {isCurrentUser ? 
+                    <Button as={Link} to='/settings' color='teal' fluid basic content='Edit Profile'/>
+                    :
+                    <Button color='green' fluid basic content='Follow User'/>    
+                    }
+                        
                     </Segment>
                 </Grid.Column>
 
@@ -100,7 +117,9 @@ class UserDetailedPage extends Component {
                         
                         <Image.Group size='small'>
                         {photos ? photos.map((photo)=>(
-                          <Image key={photo.id} src={photo.url}/>
+                          <Lazyload key={photo.id} height={150} placeholder={<Image src="/assets/user.png"/>}>
+                            <Image src={photo.url}/>
+                          </Lazyload>
                         )) : <Image src={profile.photoURL}/>}
                         </Image.Group>
                     </Segment>
@@ -151,4 +170,4 @@ class UserDetailedPage extends Component {
     }
 }
 
-export default  compose(connect(mapState, null), firestoreConnect(auth=> query(auth)),)(UserDetailedPage);
+export default compose(connect(mapState, null), firestoreConnect((auth, userUid)=> userDetailedQuery(auth, userUid)),)(UserDetailedPage);

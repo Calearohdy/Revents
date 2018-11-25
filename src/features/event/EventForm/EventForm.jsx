@@ -63,15 +63,14 @@ class EventForm extends Component {
     scriptLoaded: false
   }
 
-  async componentDidMount() {
-    const {firestore, match} = this.props;
-    let event = await firestore.get(`events/${match.params.id}`)
+  async componentDidMount() {  // triggers re-render or reload to check event id from match params,
+    const {firestore, match} = this.props;  // use for reloading after an action i.e. in this case an event is activated or cancelled
+    await firestore.setListener(`events/${match.params.id}`)
+  }
 
-    if(event.exists) {
-      this.setState({
-        venueLatLng: event.data().venueLatLng
-      })
-    }
+  async componentWillUnmount() { // removes the listener that is triggered from an action and set by componentDidMount method
+    const {firestore, match} = this.props;
+    await firestore.unsetListener(`events/${match.params.id}`)
   }
 
   handScriptLoaded = () => this.setState({scriptLoaded: true})
@@ -105,6 +104,9 @@ class EventForm extends Component {
   onFormSubmit = (values) => {
     values.venueLatLng = this.state.venueLatLng;
     if (this.props.initialValues.id) {
+      if(Object.keys(values.venueLatLng).length === 0) {
+        values.venueLatLng = this.props.event.venueLatLng
+      }
       this.props.updateEvent(values);
       this.props.history.goBack();
     } else {
@@ -122,7 +124,7 @@ class EventForm extends Component {
   }
 
   render() {
-    const { invalid, submitting, pristine, event, cancelToggle } = this.props; // destructured props
+    const { invalid, submitting, pristine, event, cancelToggle } = this.props; // destructured
     const key = 'AIzaSyBqdEbDIxbDCP8Sy4oR1QVHZdc1Sz5FHu8';
     return (
       <Grid>
@@ -160,7 +162,7 @@ class EventForm extends Component {
                 type='button'
                 color={event.cancelled ? 'green' : 'red'}
                 floated='right'
-                content={event.cancelled ? 'Reactiviate Event' : 'Cancel event'}
+                content={event.cancelled ? 'Reactivate Event' : 'Cancel event'}
               />
             </Form>
           </Segment>
