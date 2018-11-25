@@ -26,3 +26,18 @@ export const createNewEvent = (user, photoURL, event) => {
       }
   }
 }
+
+
+// this takes in a dataset - in our case a flat array - and each item in the data set we add an item in our hash table
+// so each element in our array will have a child node
+// if a.parentId != 0 then we will push child node data into the child nodes within the parents
+export const createDataTree = dataset => {
+    let hashTable = Object.create(null);
+    dataset.forEach(a => hashTable[a.id] = {...a, childNodes: []});
+    let dataTree = [];
+    dataset.forEach(a => {
+        if (a.parentId) hashTable[a.parentId].childNodes.push(hashTable[a.id]);
+        else dataTree.push(hashTable[a.id])
+    });
+    return dataTree
+};

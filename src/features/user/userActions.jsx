@@ -2,6 +2,8 @@ import moment from 'moment'
 import {toastr} from 'react-redux-toastr'
 import cuid from 'cuid';
 import { asyncActionFinish, asyncActionStart, asyncActionError } from '../async/asyncActions';
+import firebase from '../../app/config/firebase';
+import { FETCH_EVENT } from '../event/eventConstants';
 
 
 export const updateProfile = (user) => 
@@ -139,3 +141,53 @@ export const updateProfile = (user) =>
             toastr.error('Error', 'Something went wrong')
         }
     }
+
+    export const getUserEvents = (userUid, activeTab) =>
+        async (dispatch, getState) => {
+            dispatch(asyncActionStart()) //  call async reducer to set loading to true
+            const firestore = firebase.firestore();
+            const today = new Date(Date.now())
+            console.log(today)
+            let eventsRef = firestore.collection('event_attendee'); // query on event_attendee to pull out the events the user is going too
+            let query;
+            switch(activeTab) { // active tab is passed in as a number 1-4
+                default: // hosted events tab
+                    query = eventsRef.where('userUid', '==', userUid).where('host', '==', true).orderBy('eventDate', 'desc');
+                //     break;
+                // case 2: // future events
+                //     query = eventsRef.where('userUid', '==', userUid).where('eventDate', '>=', today).orderBy('eventDate');
+                //     break;
+                // case 3: // past events
+                //     query = eventsRef.where('userUid', '==', userUid).where('eventDate', '<=', today).orderBy('eventDate', 'desc');
+                //     break;
+                // default: // all events
+                //     query = eventsRef.where('userUid', '==', userUid).orderBy('eventDate', 'desc');      
+            }
+            try {
+                let querySnap = await query.get() // query snapshot provied from firestore -- instance of the query that is ready to be used
+               
+                if (querySnap.docs.length === 0) {
+                    dispatch(asyncActionFinish())
+                    toastr.error('Error', 'No events available currently')
+                    console.log(querySnap);
+                    return querySnap;
+                }
+
+                let events = [];
+
+                for (let i = 0; i < querySnap.docs.length; i++) {
+                    // loop though events in the events collection in firestore where each query snapshot object is
+                    // is retrieved and stored into the evt variable
+                    let evt = await firestore.collection('events').doc(querySnap.docs[i].data().eventId).get()
+                    events.push({...evt.data(), id: evt.id}) // spread evt objects using data method and push into events array along with the evt id
+                    
+                }
+                dispatch({type: FETCH_EVENT, payload: {events}}) // pass events data into the events reducer
+                dispatch(asyncActionFinish())
+                console.log(querySnap);
+                return querySnap;
+            } catch (error) {
+                console.log(error)
+                dispatch(asyncActionError())
+            }
+        }

@@ -1,17 +1,11 @@
 import { toastr } from 'react-redux-toastr'
-import { DELETE_EVENT, FETCH_EVENT } from './eventConstants';
+import { FETCH_EVENT } from './eventConstants';
 import {asyncActionStart, asyncActionFinish, asyncActionError} from '../async/asyncActions'
-import { fetchSampleData } from '../../app/data/mockApi';
 import { createNewEvent } from '../../app/common/util/helpers';
 import moment from 'moment';
+import firebase from '../../app/config/firebase';
 
 
-export const fetchEvents = (events) => {
-    return {
-        type: FETCH_EVENT,
-        payload: events
-    }
-};
 
 
 export const createEvent = (event) => {
@@ -23,7 +17,7 @@ export const createEvent = (event) => {
         try {
             let createdEvent = await firestore.add(`events`, newEvent);
             await firestore.set(`event_attendee/${createdEvent.id}_${user.uid}`,{
-                eventID: createdEvent.id,
+                eventId: createdEvent.id,
                 userUid: user.uid,
                 eventDate: event.date,
                 host: true
@@ -66,25 +60,62 @@ export const cancelToggle = (cancelled, eventId) => async (dispatch, getState, {
 };
 
 
-export const deleteEvent = (eventId) => {
-    return {
-        type: DELETE_EVENT,
-        payload: {
-            eventId
-        }
+// rather than listening - we are just getting events data initially and using start After method to re-query the firebase document for more events after the last query
+export const getEventsForDashboard = (lastEvent) => async (dispatch, getState) =>{
+    let today = new Date(Date.now())
+    const firestore = firebase.firestore()
+    const eventsRef = firestore.collection('events'); // creating the firestore query
+    
+    try {
+      dispatch(asyncActionStart()) // calls the async reducer to set loading to true
+      // getter method to grab the documents from the events collection
+      let startAfter = lastEvent && await firestore.collection('events').doc(lastEvent.id).get()  // query to start after the last Event for pagination
+      let query; // placeholder for new queries to firebase if a last event and start after event occur
+      
+      lastEvent ? query = eventsRef.orderBy('date').startAfter(startAfter).limit(2) // if there is a last event query firebase for paging .where('date', '>=', today)
+      : query = eventsRef.orderBy('date').limit(2) // else keep initial query to firebase with two objects .where('date', '>=', today)
+      let querySnap = await query.get() // executes the query to firebase
+      //-- calls async reducer and returns an empty events state to the component if no events exist
+      if (querySnap.docs.length === 0) {
+          dispatch(asyncActionFinish())
+          return querySnap; // this will have 0, 1 or 2 events
+      }  
+      // --
+      let events = []; // init var to store documents data
+
+      for (let i=0; i< querySnap.docChanges.length; i++) { // looping though the query data
+        // data() method retrieves all fields in the document as objects
+        let evt = {...querySnap.docs[i].data(), id: querySnap.docs[i].id}; // spreads all the fields into the evt var and also get all the ids and store into the evt var
+        events.push(evt) // push objects into events array
+      }
+      dispatch({type: FETCH_EVENT, payload: {events}}) // passing data to the reducer so that it can be used in the state
+      dispatch(asyncActionFinish()) // calls the async reducer to set loading to false
+      return querySnap; // returns query data to the events state for the component to use
+    
+    } catch (error) {
+        dispatch(asyncActionError()) // calls the async reducer to set loading to false
+        console.log(error)
     }
 }
 
-export const loadEvents = () => {
-    return async dispatch => {
+// connecting event chat comment section to firebase
+export const addEventComment = (eventId, values, parentId) =>
+    async (dispatch, getState, {getFirebase}) => {
+        const firebase = getFirebase();
+        const profile = getState().firebase.profile
+        const user = firebase.auth().currentUser
+        let newComment = { // passing data up to firestore to better structure the data for more control
+            parentId: parentId,
+            displayName: profile.displayName,
+            photoURL: profile.photoURL || '/assets/user.png',
+            uid: user.uid,
+            text: values.comment,
+            date: Date.now() 
+        }
         try {
-            dispatch(asyncActionStart())
-            let events = await fetchSampleData();
-            dispatch(fetchEvents(events))
-            dispatch(asyncActionFinish())
+            await firebase.push(`event_chat/${eventId}`, newComment)
         } catch (error) {
-            console.log(error);
-            dispatch(asyncActionError())
+            console.log(error)
+            toastr.error('Error', 'Unable to add your comment')
         }
     }
-};

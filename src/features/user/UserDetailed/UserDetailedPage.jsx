@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Card, Grid, Header, Icon, Image, Item, List, Menu, Segment} from "semantic-ui-react";
+import {Button, Grid, Header, Icon, Image, Item, List, Segment} from "semantic-ui-react";
 import { Link } from 'react-router-dom'
 import { compose } from 'redux'
 import { connect } from 'react-redux';
@@ -8,6 +8,8 @@ import { differenceInYears, format } from 'date-fns';
 import { userDetailedQuery } from '../userQueries';
 import Lazyload from 'react-lazyload';
 import LoadingComponent from '../../../app/layout/LoadingComponent'
+import UserDetailedEvents from './UserDetailedEvents'
+import { getUserEvents } from '../userActions';
 
 // logic in state to check User profile
 const mapState = (state, ownProps) => { // ownProps gives access to props from Parent component
@@ -21,19 +23,36 @@ const mapState = (state, ownProps) => { // ownProps gives access to props from P
         userUid = ownProps.match.params.id
     }
 
+    // these all exist in the reducer and are being mapped to the state as props
     return {
         auth: state.firebase.auth,
         profile,
         userUid,
+        events: state.events,
+        eventsLoading: state.async.loading,
         photos: state.firestore.ordered.photos,
-        requesting: state.firestore.status.requesting
+        requesting: state.firestore.status.requesting  // handles loading screens with hooks provided by firestore
     }
 
 }
+
+const actions = {
+    getUserEvents
+}
 class UserDetailedPage extends Component {
 
+    async componentDidMount() { // used to actually call method from user action
+        let events = await this.props.getUserEvents(this.props.userUid); // handles events query to firebase with 2 params, user id and tab
+        console.log(events);
+    }
+
+    changeTab = (event, data) => {
+        let changeTab = this.props.getUserEvents(this.props.userUid, data.activeIndex)
+        console.log(changeTab)
+    }
+
     render() {
-      const { profile, photos, auth, match, requesting } = this.props;
+      const { profile, photos, auth, match, requesting, events, eventsLoading } = this.props;
       let age;
       if (profile.dateOfBirth) {
         age = differenceInYears(Date.now(), profile.dateOfBirth.toDate())
@@ -125,49 +144,11 @@ class UserDetailedPage extends Component {
                     </Segment>
                 </Grid.Column>
                 {/* this remains static for now*/}
-                <Grid.Column width={12}>
-                    <Segment attached>
-                        <Header icon='calendar' content='Events'/>
-                        <Menu secondary pointing>
-                            <Menu.Item name='All Events' active/>
-                            <Menu.Item name='Past Events'/>
-                            <Menu.Item name='Future Events'/>
-                            <Menu.Item name='Events Hosted'/>
-                        </Menu>
-                
-                        <Card.Group itemsPerRow={5}>
-
-                            <Card>
-                                <Image src={'/assets/categoryImages/drinks.jpg'}/>
-                                <Card.Content>
-                                    <Card.Header textAlign='center'>
-                                        Event Title
-                                    </Card.Header>
-                                    <Card.Meta textAlign='center'>
-                                        28th March 2018 at 10:00 PM
-                                    </Card.Meta>
-                                </Card.Content>
-                            </Card>
-
-                            <Card>
-                                <Image src={'/assets/categoryImages/drinks.jpg'}/>
-                                <Card.Content>
-                                    <Card.Header textAlign='center'>
-                                        Event Title
-                                    </Card.Header>
-                                    <Card.Meta textAlign='center'>
-                                        28th March 2018 at 10:00 PM
-                                    </Card.Meta>
-                                </Card.Content>
-                            </Card>
-
-                        </Card.Group>
-                    </Segment>
-                </Grid.Column>
+                <UserDetailedEvents events={events} eventsLoading={eventsLoading} changeTab={this.changeTab}/>
             </Grid>
 
         );
     }
 }
 
-export default compose(connect(mapState, null), firestoreConnect((auth, userUid)=> userDetailedQuery(auth, userUid)),)(UserDetailedPage);
+export default compose(connect(mapState, actions), firestoreConnect((auth, userUid)=> userDetailedQuery(auth, userUid)),)(UserDetailedPage);
