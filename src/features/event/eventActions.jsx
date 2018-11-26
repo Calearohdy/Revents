@@ -62,7 +62,7 @@ export const cancelToggle = (cancelled, eventId) => async (dispatch, getState, {
 
 // rather than listening - we are just getting events data initially and using start After method to re-query the firebase document for more events after the last query
 export const getEventsForDashboard = (lastEvent) => async (dispatch, getState) =>{
-    let today = new Date(Date.now())
+    //let today = new Date(Date.now())
     const firestore = firebase.firestore()
     const eventsRef = firestore.collection('events'); // creating the firestore query
     
