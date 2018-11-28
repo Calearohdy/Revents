@@ -4,6 +4,7 @@
 export const userDetailedQuery = ({ auth, userUid }) => { // listener
 
     if (userUid !== null) {
+        // !currentUser profile
         return [{
             collection: 'users',
             doc: userUid,
@@ -14,15 +15,28 @@ export const userDetailedQuery = ({ auth, userUid }) => { // listener
             doc: userUid,
             subcollections: [{collection: 'photos'}],
             storeAs: 'photos'
+        },
+        {
+            collection: 'users',
+            doc: userUid,
+            subcollections: [{collection: 'followed'}],
+            storeAs: 'followed'
         }
     ]
     } else {
     return [
+        // currentUser profile
       {
         collection: 'users',
         doc: auth.uid,
         subcollections: [{ collection: 'photos' }],
         storeAs: 'photos'
+      },
+      {
+          collection: 'users',
+          doc: auth.uid,
+          subcollections: [{collection: 'followed'}],
+          storeAs: 'followed'
       }
     ]}
   };

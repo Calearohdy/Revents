@@ -21,6 +21,7 @@ export const updateProfile = (user) =>
             console.log(error)
         }
     }
+    
  export const uploadProfileImage = (file, fileName) => 
     async (dispatch, getState, {getFirebase, getFirestore}) => {
         const firebase = getFirebase();
@@ -93,6 +94,66 @@ export const updateProfile = (user) =>
         } catch (error) {
             console.log(error)
             throw new Error(error)
+        }
+    }
+
+    /*
+        Once follow user is clicked on, followUser action will
+        connect to firebase api, add a new following collection user with the followed user data
+    */
+
+    export const followUser = (profile) => async (dispatch, getState, {getFirestore})=> {
+        const firestore = getFirestore()
+        const currentUser = firestore.auth().currentUser // this is grabbing the authenticated user - this is who is logged in
+        const newFollow = profile // this is the profile you are on
+        //const followed = getState().firestore.ordered.following  // grabs user objects in the array of users you are following
+        dispatch(asyncActionStart()) // call reducer for state boolean 
+
+        try {
+            
+            // creates current user subcollection following
+            await firestore.add({
+                collection: 'users',
+                doc: currentUser.uid,
+                subcollections: [{collection: 'following'}]
+            }, {
+                follow: true,
+                photoURL: newFollow.photoURL || '/assets/user.png',
+                displayName: newFollow.displayName
+            })
+
+            // create selected user subcollection followed
+            await firestore.add(
+                {
+                collection: 'users',
+                doc: newFollow.id,
+                subcollections: [{collection: 'followed'}]    
+                },
+                {
+                  follow: true,
+                  followedId: currentUser.uid,  
+                  photoURL: currentUser.photoURL || '/assets/user.png',
+                  displayName: currentUser.displayName  
+                }
+            )
+
+            // creating relationship table of follower/followed    
+            await firestore.set(`followed_Following/${currentUser.uid}_${newFollow.id}`, {
+                followerId: currentUser.uid,
+                followedId: newFollow.id,
+                following: true,
+                follower: currentUser.displayName,
+                followed: newFollow.displayName
+            })
+
+            dispatch(asyncActionFinish())
+            toastr.success('Success','Better check firebase!')
+        } catch (error) {
+            console.log(currentUser)
+            console.log(newFollow)
+            console.log(error)
+            dispatch(asyncActionError())
+            toastr.error('Error', 'Yikes...')
         }
     }
     
