@@ -21,6 +21,12 @@ export const userDetailedQuery = ({ auth, userUid }) => { // listener
             doc: userUid,
             subcollections: [{collection: 'followed'}],
             storeAs: 'followed'
+        },
+        {
+            collection: 'users',
+            doc: auth.uid,
+            subcollections: [{collection: 'following'}],
+            storeAs: 'following'
         }
     ]
     } else {
