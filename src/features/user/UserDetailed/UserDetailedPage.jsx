@@ -10,16 +10,16 @@ import Lazyload from 'react-lazyload';
 import LoadingComponent from '../../../app/layout/LoadingComponent'
 import UserDetailedEvents from './UserDetailedEvents'
 import { getUserEvents, followUser, unfollowUser } from '../userActions';
-import { objectToArray } from '../../../app/common/util/helpers';
 
 // logic in state to check User profile
 const mapState = (state, ownProps) => { // ownProps gives access to props from Parent component
     let userUid = null;
     let profile = {};
 
+    // this is user profile
     if(ownProps.match.params.id === state.auth.id) { // checks to see if you are clicking on your user id or another attendee
         profile = state.firebase.profile
-        
+    // this is not your profile    
     } else {
         profile = !isEmpty(state.firestore.ordered.profile) && state.firestore.ordered.profile[0] // check profile isn't empty and isn't your profile
         userUid = ownProps.match.params.id
@@ -49,11 +49,9 @@ const actions = {
 class UserDetailedPage extends Component {
 
     async componentDidMount() { // used to actually call method from user action
-        let events = await this.props.getUserEvents(this.props.userUid); // handles events query to firebase with 2 params, user id and tab
-        let followed = await this.props.followed;
-        let following = await Object.keys(this.props.following);
-        console.log(followed, 'Who followed');
-        console.log(following, 'Whos following');
+        //let events = await this.props.getUserEvents(this.props.userUid); // handles events query to firebase with 2 params, user id and tab
+        let following = await this.props.following;
+        console.log(following, 'following');
     }
 
     changeTab = (event, data) => {
@@ -63,24 +61,24 @@ class UserDetailedPage extends Component {
 
     // takes followed params [array of objects] compares it against current user id
     // if there is a value that 
-    isFollowingUser = (followed, match) => {
-        let userId = match.params.id;
-        let isFollowing;
-        loop: {
-            for(var i=0; i<followed.length; i++) {
-                if((followed[i].followedId === userId)) {
-                    isFollowing = true;
-                    break loop;
-                }
-            }
-            isFollowing = false;
-        }
-        return isFollowing
-    }
+    // isFollowingUser = (followed, match) => {
+    //     let userId = match.params.id;
+    //     let isFollowing;
+    //     loop: {
+    //         for(var i=0; i<followed.length; i++) {
+    //             if((followed[i].followedId === userId)) {
+    //                 isFollowing = true;
+    //                 break loop;
+    //             }
+    //         }
+    //         isFollowing = false;
+    //     }
+    //     return isFollowing
+    // }
 
 
     render() {
-      const { profile, photos, auth, match, requesting, events, eventsLoading, followed, following, followUser, unfollowUser } = this.props;
+      const { profile, photos, auth, match, requesting, events, eventsLoading, followed, followUser, unfollowUser } = this.props;
       let age;
       if (profile.dateOfBirth) {
         age = differenceInYears(Date.now(), profile.dateOfBirth.toDate())
@@ -95,10 +93,10 @@ class UserDetailedPage extends Component {
       }
       // matches followed key with current user key id
       // pull key out of array of followed objects
-      let isFollowed;
-      if (followed) {
-        isFollowed = this.isFollowingUser(followed, match)
-      }
+      let isFollowed = false;
+    //   if (followed) {
+    //     isFollowed = this.isFollowingUser(followed, match)
+    //   }
       const isCurrentUser = auth.uid === match.params.id;
       const loading = Object.values(requesting).some(a => a === true);
 
@@ -153,14 +151,13 @@ class UserDetailedPage extends Component {
                     </Segment>
                 </Grid.Column>
                 <Grid.Column width={4}>
-                    <Segment> {/* will need to also have a condition to change if they are following the user or not */}
+                    <Segment> {/* will need to also have a condition to change if they are following the user or not onClick={()=> unfollowUser(followed[0])} color='teal' fluid basic content={`Unfollow ${followed[0].followName}`}*/}
                         { isCurrentUser ? <Button as={Link} to='/settings' color='teal' fluid basic content='Edit Profile'/> 
                                : 
                         !isCurrentUser && isFollowed !== true ? <Button loading={eventsLoading} onClick={() => followUser(profile)} color='green' fluid basic content={`Follow ${profile.displayName}`}/>
                                : 
-                        followed.map((follow)=>(
-                            <Button key={follow.id} loading={eventsLoading} onClick={()=> unfollowUser(follow)} color='teal' fluid basic content={`Unfollow ${follow.followName}`}/>
-                        ))}         
+                        <Button  loading={eventsLoading} color='green' fluid basic/>
+                        }         
                     </Segment>
                 </Grid.Column>
 

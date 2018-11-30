@@ -4,7 +4,6 @@ import cuid from 'cuid';
 import { asyncActionFinish, asyncActionStart, asyncActionError } from '../async/asyncActions';
 import firebase from '../../app/config/firebase';
 import { FETCH_EVENT } from '../event/eventConstants';
-import { __await } from 'tslib';
 
 
 export const updateProfile = (user) => 
@@ -102,43 +101,44 @@ export const updateProfile = (user) =>
         Once follow user is clicked on, followUser action will
         connect to firebase api, add a new following collection user with the followed user data
     */
-    export const followUser = (profile) => async (dispatch, getState, {getFirestore})=> {
+    export const followUser = (userToFollow) => async (dispatch, getState, {getFirestore})=> {
         const firestore = getFirestore()
-        const currentUser = firestore.auth().currentUser // this is grabbing the authenticated user - this is who is logged in
-        const newFollow = profile // this is the profile you are on
+        const user = firestore.auth().currentUser // this is grabbing the authenticated user - this is who is logged in
+        const followed = {
+            photoURL: userToFollow.photoURL || '/assets/user.png',
+            city: userToFollow.city || 'Unknown City',
+            displayName: userToFollow.displayName
+        };
         //const followed = getState().firestore.ordered.following  // grabs user objects in the array of users you are following
         dispatch(asyncActionStart()) // call reducer for state boolean 
 
         try {
             
-            
             // creates current user subcollection following
-            await firestore.add({
+            await firestore.set(
+                {
                 collection: 'users',
-                doc: currentUser.uid,
-                subcollections: [{collection: 'following'}]
-            }, {
-                followingId: currentUser.uid,
-                photoURL: newFollow.photoURL || '/assets/user.png',
-                displayName: newFollow.displayName,
-                followName: currentUser.displayName
-            })
+                doc: user.uid,
+                subcollections: [{collection: 'following', doc: userToFollow.id}]
+                }, 
+                followed
+            );
 
             // create selected user subcollection followed
-            await firestore.add(
-                {
-                collection: 'users',
-                doc: newFollow.id,
-                subcollections: [{collection: 'followed'}]    
-                },
-                {
-                  followedId: newFollow.id,
-                  followerId: currentUser.uid,  
-                  photoURL: currentUser.photoURL || '/assets/user.png',
-                  displayName: currentUser.displayName,  
-                  followName: newFollow.displayName  
-                }
-            )
+            // await firestore.add(
+            //     {
+            //     collection: 'users',
+            //     doc: newFollow.id,
+            //     subcollections: [{collection: 'followed'}]    
+            //     },
+            //     {
+            //       followedId: newFollow.id,
+            //       followerId: currentUser.uid,  
+            //       photoURL: currentUser.photoURL || '/assets/user.png',
+            //       displayName: currentUser.displayName,  
+            //       followName: newFollow.displayName  
+            //     }
+            // )
                 // currently unsure about a data structure that will work with this
             // creating relationship table of follower/followed    
             // await firestore.set(`followed_Following/${currentUser.uid}_${newFollow.id}`, {
@@ -152,8 +152,6 @@ export const updateProfile = (user) =>
             dispatch(asyncActionFinish())
             toastr.success('Success','Better check firebase!')
         } catch (error) {
-            console.log(currentUser)
-            console.log(newFollow)
             console.log(error)
             dispatch(asyncActionError())
             toastr.error('Error', 'Yikes...')
@@ -162,7 +160,7 @@ export const updateProfile = (user) =>
 
     export const unfollowUser = (follow) => async (dispatch, getState, {getFirestore}) => {
         const firestore = getFirestore()
-        const currentUser = firestore.auth().currentUser // this is grabbing the authenticated user - this is who is logged in
+        //const currentUser = firestore.auth().currentUser // this is grabbing the authenticated user - this is who is logged in
         //const newUnfollow = firestore.data().profile // this is the profile you are on
 
         // const isFollowing = getState().firestore.data.following  // grabs user objects in the array of users you are following
@@ -174,8 +172,8 @@ export const updateProfile = (user) =>
 
             await firestore.delete({
                 collection: 'users',
-                doc: follow.followedId,
-                subcollections: [{collection: 'followed', doc: follow.id}]
+                doc: follow[0].followedId,
+                subcollections: [{collection: 'followed', doc: follow[0].id}]
             })
 
             // await firestore.delete({
@@ -185,12 +183,12 @@ export const updateProfile = (user) =>
             // })
 
             dispatch(asyncActionFinish())
-            toastr.success('Success', `You Unfollowed ${follow.followName}`)
+            toastr.success('Success', `You Unfollowed ${follow[0].followName}`)
 
         } catch (error) {
             dispatch(asyncActionError())
             console.log(error)
-            toastr.error('Error', `${follow.followName} says no`)
+            toastr.error('Error', `${follow[0].followName} says no`)
         }
     }
     

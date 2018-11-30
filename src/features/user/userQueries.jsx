@@ -7,6 +7,18 @@ export const userDetailedQuery = ({ auth, userUid }) => { // listener
         // !currentUser profile
         return [{
             collection: 'users',
+            doc: auth.uid,
+            subcollections: [{ collection: 'following'}],
+            storeAs: 'following'
+          },    
+          {
+            collection: 'users',
+            doc: auth.uid,
+            subcollections: [{ collection: 'followers'}],
+            storeAs: 'followers'
+          },
+        {
+            collection: 'users',
             doc: userUid,
             storeAs: 'profile'
         },
@@ -16,18 +28,7 @@ export const userDetailedQuery = ({ auth, userUid }) => { // listener
             subcollections: [{collection: 'photos'}],
             storeAs: 'photos'
         },
-        {
-            collection: 'users',
-            doc: userUid,
-            subcollections: [{collection: 'followed'}],
-            storeAs: 'followed'
-        },
-        {
-            collection: 'users',
-            doc: auth.uid,
-            subcollections: [{collection: 'following'}],
-            storeAs: 'following'
-        }
+
     ]
     } else {
     return [
@@ -39,10 +40,16 @@ export const userDetailedQuery = ({ auth, userUid }) => { // listener
         storeAs: 'photos'
       },
       {
-          collection: 'users',
-          doc: auth.uid,
-          subcollections: [{collection: 'followed'}],
-          storeAs: 'followed'
+        collection: 'users',
+        doc: auth.uid,
+        subcollections: [{ collection: 'following'}],
+        storeAs: 'following'
+      },    
+      {
+        collection: 'users',
+        doc: auth.uid,
+        subcollections: [{ collection: 'followers'}],
+        storeAs: 'followers'
       }
     ]}
   };

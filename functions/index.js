@@ -14,6 +14,40 @@ const newActivity = (type, event, id) => {
         eventId: id
     }
 }
+// users collection/current user id/ following/ user you are following id
+exports.userFollowing = functions.firestore.document('users/{followerUid}/following/{followingUid}').onCreate((event, context) => { // event and context are passed to get the params
+        console.log('first step')
+        const followerUid = context.params.followerUid;
+        const followingUid = context.params.followingUid;
+
+        // this is a reference to the current doc -- current user
+        // create a document to get data from then structure it
+        const followerDoc = admin
+        .firestore() // this allows access to the database
+        .collection('users')
+        .doc(followerUid)
+
+        console.log(followerDoc)
+        // this is a reference to the followed user doc --followed user
+        // followerDoc contains information that was created 
+        return followerDoc.get().then(doc => {
+            let userData = doc.data() // storing information
+            console.log({userData})
+            let follower = { // storing the current users information into a followed collection for the user being followed
+                displayName: userData.displayName,
+                photoURL: userData.photoURL || '/assets/user.png',
+                city: userData.city || 'Unknown city'
+            };
+            return admin
+            .firestore()
+            .collection('users') // users collection
+            .doc(followingUid) // the user you are following
+            .collection('followers') // creating a new subcollection of following
+            .doc(followerUid) // this wil set the document id being created to your id
+            .set(follower) // stores your information into that document
+        })
+
+    });
 
 exports.createActivity = functions.firestore
     .document('events/{eventId}')
