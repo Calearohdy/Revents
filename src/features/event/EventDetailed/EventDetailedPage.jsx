@@ -28,6 +28,7 @@ const mapState = (state, ownProps) => { // ownProps is props contained in the co
   return { // becomes props for the component to use from state - controlled by the reducer - given by higher order function Redux
     event,
     auth: state.firebase.auth,
+    loading: state.async.loading,
     // normal check to see if a chat is available, then use objecttoArray to get the object Id and Values in an array
     eventChat: !isEmpty(state.firebase.data.event_chat) && objectToArray(state.firebase.data.event_chat[ownProps.match.params.id])
   }
@@ -47,7 +48,7 @@ class EventDetailedPage extends Component {
   }
 
   render() {
-    const {event, auth, goingToEvent, cancelGoingToEvent, addEventComment, eventChat} = this.props;
+    const {event, auth, goingToEvent, cancelGoingToEvent, addEventComment, eventChat, loading} = this.props;
     const attendees = event && event.attendees && objectToArray(event.attendees);
     const isHost = event.hostUid === auth.uid;
     const isGoing = attendees && attendees.some(a => a.id === auth.uid); // callback method that checks an array for true results
@@ -55,7 +56,7 @@ class EventDetailedPage extends Component {
     return (
       <Grid>
       <Grid.Column width={10}>
-        <EventDetailedHeader event={event} isHost={isHost} isGoing={isGoing} goingToEvent={goingToEvent} cancelGoingToEvent={cancelGoingToEvent}/>
+        <EventDetailedHeader loading={loading} event={event} isHost={isHost} isGoing={isGoing} goingToEvent={goingToEvent} cancelGoingToEvent={cancelGoingToEvent}/>
         <EventDetailedInfo event={event}/>
         <EventDetailedChat addEventComment={addEventComment} eventId={event.id} eventChat={chatTree} />
       </Grid.Column>

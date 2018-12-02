@@ -85,13 +85,44 @@ export const updateProfile = (user) =>
         }
     }
     
-    export const setMainPhoto = (photo) => async (dispatch, getState, {getFirebase})=>{
-        const firebase = getFirebase();
+    export const setMainPhoto = (photo) => async (dispatch, getState)=>{
+        dispatch(asyncActionStart())
+        const firestore = firebase.firestore()
+        const user = firebase.auth().currentUser;
+        const today = new Date(Date.now());
+        let userDocRef = firestore.collection('users').doc(user.uid); // reference to the users documents
+        let eventAttendeeRef = firestore.collection('event_attendee') // reference to the attendees for each event
+
         try {
-            return await firebase.updateProfile({
+            let batch = firestore.batch() // performing multiple writes in one action
+            // updating user profile photo in firebase
+            await batch.update(userDocRef, {
                 photoURL: photo.url
-            });
+            })
+            // creating a query to get the initial data that we will be performing an action on based on the where condition
+            let eventQuery = await eventAttendeeRef.where('userUid', '==', user.uid).where('eventDate', '>', today)
+            // getting and storing the data/documents that we just received from the query above, providing a snapshot to work with
+            // allowing us to loop through them and update them
+            let eventQuerySnap = await eventQuery.get()
+            for(let i=0; i<eventQuerySnap.docs.length; i++) {
+                let eventDocRef = await firestore.collection('events').doc(eventQuerySnap.docs[i].data().eventId);
+                let event = await eventDocRef.get()
+                if(event.data().hostUid === user.uid) {
+                    batch.update(eventDocRef, {
+                        hostPhotoURL: photo.url,
+                        [`attendees.${user.uid}.photoURL`]: photo.url
+                    })
+                } else {
+                    batch.update(eventDocRef, {
+                        [`attendees.${user.uid}.photoURL`]: photo.url
+                    })
+                }
+            }
+          console.log(batch)
+          await batch.commit()
+          dispatch(asyncActionFinish())  
         } catch (error) {
+            dispatch(asyncActionError())
             console.log(error)
             throw new Error(error)
         }
@@ -123,31 +154,6 @@ export const updateProfile = (user) =>
                 }, 
                 followed
             );
-
-            // create selected user subcollection followed
-            // await firestore.add(
-            //     {
-            //     collection: 'users',
-            //     doc: newFollow.id,
-            //     subcollections: [{collection: 'followed'}]    
-            //     },
-            //     {
-            //       followedId: newFollow.id,
-            //       followerId: currentUser.uid,  
-            //       photoURL: currentUser.photoURL || '/assets/user.png',
-            //       displayName: currentUser.displayName,  
-            //       followName: newFollow.displayName  
-            //     }
-            // )
-                // currently unsure about a data structure that will work with this
-            // creating relationship table of follower/followed    
-            // await firestore.set(`followed_Following/${currentUser.uid}_${newFollow.id}`, {
-            //     followerId: currentUser.uid,
-            //     followedId: newFollow.id,
-            //     following: true,
-            //     follower: currentUser.displayName,
-            //     followed: newFollow.displayName
-            // })
 
             dispatch(asyncActionFinish())
             toastr.success('Success','Better check firebase!')
@@ -182,9 +188,10 @@ export const updateProfile = (user) =>
         }
     }
     
-    export const goingToEvent = (event) => async (dispatch, getState, {getFirestore})=>{
-        const firestore = getFirestore()
-        const user = firestore.auth().currentUser;
+    export const goingToEvent = (event) => async (dispatch, getState)=>{
+        dispatch(asyncActionStart())
+        const firestore = firebase.firestore()
+        const user = firebase.auth().currentUser;
         const photoURL = getState().firebase.profile.photoURL;
         const attendee = { // setting up meta data to refer to
             going: true,
@@ -195,6 +202,21 @@ export const updateProfile = (user) =>
         }
 
         try {
+            let eventDocRef = firestore.collection('events').doc(event.id)
+            let eventAttendeeDocRef = firestore.collection('event_attendee').doc(`${event.id}_${user.uid}`)
+
+            await firestore.runTransaction(async (transaction) => {
+                await transaction.get(eventDocRef);
+                await transaction.update(eventDocRef, {
+                    [`attendees.${user.uid}`]: attendee
+                })
+                await transaction.set(eventAttendeeDocRef, {
+                    eventId: event.id,
+                    userUid: user.uid,
+                    eventDate: event.date,
+                    host: false
+                })
+            })
             await firestore.update(`events/${event.id}`, {
                 [`attendees.${user.uid}`]: attendee
             })
@@ -204,10 +226,11 @@ export const updateProfile = (user) =>
                 eventDate: event.date,
                 host: false
             })
-
+            dispatch(asyncActionFinish())
             toastr.success('Success', 'You have signed up for the event')
         } catch (error) {
             console.log(error);
+            dispatch(asyncActionError())
             toastr.error('Error', 'An Error as occured')
         }
     }
