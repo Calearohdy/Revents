@@ -48,6 +48,21 @@ exports.userFollowing = functions.firestore.document('users/{followerUid}/follow
         })
 
     });
+// this cloud function is activated when you unfollow a user
+// it first needs to grab the document that needs to be deleted via document method,
+// then pass the event and context to the onDelete
+// context.params will grab the id from the parameters and then delete
+// use a promise to either get a success or error
+exports.unfollowUser = functions.firestore.document('users/{followerUid}/following/{followingUid}').onDelete((event, context) => {
+    return admin.firestore().collection('users').doc(context.params.followingUid).collection('followers').doc(context.params.followerUid)
+        .delete()
+        .then(()=> {
+            return console.log('doc deleted')
+        })
+        .catch(err => {
+            return console.log(err)
+        });
+});    
 
 exports.createActivity = functions.firestore
     .document('events/{eventId}')

@@ -1,22 +1,16 @@
 // Query or listener that depends on the state logic defined in UserDetailedPage,
 // check if user clicks on own profile or another users profile
 
-export const userDetailedQuery = ({ auth, userUid }) => { // listener
+export const userDetailedQuery = ({ auth, userUid, match }) => { // listener
 
     if (userUid !== null) {
         // !currentUser profile
         return [{
             collection: 'users',
             doc: auth.uid,
-            subcollections: [{ collection: 'following'}],
+            subcollections: [{ collection: 'following', doc: match.params.id}],
             storeAs: 'following'
           },    
-          {
-            collection: 'users',
-            doc: auth.uid,
-            subcollections: [{ collection: 'followers'}],
-            storeAs: 'followers'
-          },
         {
             collection: 'users',
             doc: userUid,
@@ -38,18 +32,6 @@ export const userDetailedQuery = ({ auth, userUid }) => { // listener
         doc: auth.uid,
         subcollections: [{ collection: 'photos' }],
         storeAs: 'photos'
-      },
-      {
-        collection: 'users',
-        doc: auth.uid,
-        subcollections: [{ collection: 'following'}],
-        storeAs: 'following'
-      },    
-      {
-        collection: 'users',
-        doc: auth.uid,
-        subcollections: [{ collection: 'followers'}],
-        storeAs: 'followers'
       }
     ]}
   };

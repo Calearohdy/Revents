@@ -8,22 +8,22 @@ import PersonCard from './PersonCard';
 
 // recieving props from firestoreConnect and passing it to the query
 // getting documents from your collection to display who you are following and whos following you
-// const query = ({ auth }) =>{
-//   return [
-//     {
-//       collection: 'users',
-//       doc: auth.uid,
-//       subcollections: [{ collection: 'following'}],
-//       storeAs: 'following'
-//     },    
-//     {
-//       collection: 'users',
-//       doc: auth.uid,
-//       subcollections: [{ collection: 'followers'}],
-//       storeAs: 'followers'
-//     }
-//   ]
-// }
+const query = ({ auth }) =>{
+  return [
+    {
+      collection: 'users',
+      doc: auth.uid,
+      subcollections: [{ collection: 'following'}],
+      storeAs: 'following'
+    },    
+    {
+      collection: 'users',
+      doc: auth.uid,
+      subcollections: [{ collection: 'followers'}],
+      storeAs: 'followers'
+    }
+  ]
+}
 
 const mapState = state => ({
   followings: state.firestore.ordered.following,
@@ -49,9 +49,6 @@ const PeopleDashboard = ({ followings, followers }) => {
           {followings && followings.map((following) =>
             <PersonCard key={following.id} user={following}/>
             )}
-            <PersonCard />
-            <PersonCard />
-            <PersonCard />
           </Card.Group>
         </Segment>
       </Grid.Column>
@@ -61,6 +58,6 @@ const PeopleDashboard = ({ followings, followers }) => {
 // passing in props (auth, follower, following) to the query and using the query at the top of the file
 //export default compose(
               
-export default connect(mapState)(PeopleDashboard)
+export default compose(connect(mapState),firestoreConnect(props => query(props)))(PeopleDashboard)
                     
 //                    , firestoreConnect(props => query(props)))(PeopleDashboard);

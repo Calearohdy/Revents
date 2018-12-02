@@ -158,37 +158,27 @@ export const updateProfile = (user) =>
         }
     }
 
-    export const unfollowUser = (follow) => async (dispatch, getState, {getFirestore}) => {
+    export const unfollowUser = (unfollow) => async (dispatch, getState, {getFirestore}) => {
         const firestore = getFirestore()
-        //const currentUser = firestore.auth().currentUser // this is grabbing the authenticated user - this is who is logged in
-        //const newUnfollow = firestore.data().profile // this is the profile you are on
-
-        // const isFollowing = getState().firestore.data.following  // grabs user objects in the array of users you are following
-
-        // let followingKeys = Object.keys(isFollowing);    
+        const user = firestore.auth().currentUser
+    
         dispatch(asyncActionStart()) // call reducer for state boolean
         
         try {
 
             await firestore.delete({
                 collection: 'users',
-                doc: follow[0].followedId,
-                subcollections: [{collection: 'followed', doc: follow[0].id}]
+                doc: user.uid,
+                subcollections: [{collection: 'following', doc: unfollow.id}]
             })
 
-            // await firestore.delete({
-            //     collection: 'users',
-            //     doc: follow.followerId,
-            //     subcollections: [{collection: 'following', doc: followingKeys}]
-            // })
-
             dispatch(asyncActionFinish())
-            toastr.success('Success', `You Unfollowed ${follow[0].followName}`)
+            toastr.success('Success', `You unfollowed ${unfollow.displayName}`)
 
         } catch (error) {
             dispatch(asyncActionError())
             console.log(error)
-            toastr.error('Error', `${follow[0].followName} says no`)
+            toastr.error('Error', `${unfollow.displayName} says no`)
         }
     }
     

@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Grid, Header, Icon, Image, Item, List, Segment} from "semantic-ui-react";
-import { Link } from 'react-router-dom'
+import { Grid, Header, Icon, Image, Item, List, Segment} from "semantic-ui-react";
 import { compose } from 'redux'
 import { connect } from 'react-redux';
 import { firestoreConnect, isEmpty } from 'react-redux-firebase';
@@ -10,6 +9,7 @@ import Lazyload from 'react-lazyload';
 import LoadingComponent from '../../../app/layout/LoadingComponent'
 import UserDetailedEvents from './UserDetailedEvents'
 import { getUserEvents, followUser, unfollowUser } from '../userActions';
+import UserDetailedButton from './UserDetailedButton';
 
 // logic in state to check User profile
 const mapState = (state, ownProps) => { // ownProps gives access to props from Parent component
@@ -32,9 +32,7 @@ const mapState = (state, ownProps) => { // ownProps gives access to props from P
         userUid,
         events: state.events,
         eventsLoading: state.async.loading,
-        ordered: state.firestore.ordered,
         photos: state.firestore.ordered.photos,
-        followed: state.firestore.ordered.followed, // followed user
         following: state.firestore.data.following,
         requesting: state.firestore.status.requesting  // handles loading screens with hooks provided by firestore
     }
@@ -51,6 +49,8 @@ class UserDetailedPage extends Component {
     async componentDidMount() { // used to actually call method from user action
         //let events = await this.props.getUserEvents(this.props.userUid); // handles events query to firebase with 2 params, user id and tab
         let following = await this.props.following;
+        let profile = await this.props.profile;
+        console.log(profile);
         console.log(following, 'following');
     }
 
@@ -78,7 +78,7 @@ class UserDetailedPage extends Component {
 
 
     render() {
-      const { profile, photos, auth, match, requesting, events, eventsLoading, followed, followUser, unfollowUser } = this.props;
+      const { profile, photos, auth, match, requesting, events, eventsLoading, followUser, following, unfollowUser } = this.props;
       let age;
       if (profile.dateOfBirth) {
         age = differenceInYears(Date.now(), profile.dateOfBirth.toDate())
@@ -93,12 +93,13 @@ class UserDetailedPage extends Component {
       }
       // matches followed key with current user key id
       // pull key out of array of followed objects
-      let isFollowed = false;
+    //  let isFollowed = false;
     //   if (followed) {
     //     isFollowed = this.isFollowingUser(followed, match)
     //   }
       const isCurrentUser = auth.uid === match.params.id;
       const loading = Object.values(requesting).some(a => a === true);
+      const isFollowing = !isEmpty(following)
 
       if (loading) return <LoadingComponent />
         return (
@@ -150,16 +151,14 @@ class UserDetailedPage extends Component {
 
                     </Segment>
                 </Grid.Column>
-                <Grid.Column width={4}>
-                    <Segment> {/* will need to also have a condition to change if they are following the user or not onClick={()=> unfollowUser(followed[0])} color='teal' fluid basic content={`Unfollow ${followed[0].followName}`}*/}
-                        { isCurrentUser ? <Button as={Link} to='/settings' color='teal' fluid basic content='Edit Profile'/> 
-                               : 
-                        !isCurrentUser && isFollowed !== true ? <Button loading={eventsLoading} onClick={() => followUser(profile)} color='green' fluid basic content={`Follow ${profile.displayName}`}/>
-                               : 
-                        <Button  loading={eventsLoading} color='green' fluid basic/>
-                        }         
-                    </Segment>
-                </Grid.Column>
+                <UserDetailedButton
+                    eventsLoading={eventsLoading} 
+                    isFollowing={isFollowing}
+                    profile={profile}
+                    followUser={followUser}
+                    isCurrentUser={isCurrentUser}
+                    unfollowUser={unfollowUser}                        
+                />
 
                 <Grid.Column width={12}>
                     <Segment attached>
@@ -182,4 +181,4 @@ class UserDetailedPage extends Component {
     }
 }
 
-export default compose(connect(mapState, actions), firestoreConnect((auth, userUid)=> userDetailedQuery(auth, userUid)),)(UserDetailedPage);
+export default compose(connect(mapState, actions), firestoreConnect((auth, userUid, match)=> userDetailedQuery(auth, userUid, match)),)(UserDetailedPage);
