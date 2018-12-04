@@ -18,7 +18,7 @@ const TestTable = ({openModal, users}) => (
       <Table.Cell collapsing>
         <Checkbox slider />
       </Table.Cell>
-      <Table.Cell selectable><a href={index}>{user.title}</a></Table.Cell>
+      <Table.Cell selectable><a href={index}>{user.name}</a></Table.Cell>
       <Table.Cell>{user.email}</Table.Cell>
       <Table.Cell>{user.plan}</Table.Cell>
     </Table.Row>

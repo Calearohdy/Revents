@@ -48,7 +48,7 @@ class TestForm extends Component {
           <Segment>
             <Header sub color='teal' content='User Details' />
             <Form onSubmit={this.props.handleSubmit(this.onFormSubmit)}>
-              <Field name='title' type='text' component={TextInput} placeholder='User Name' />
+              <Field name='name' type='text' component={TextInput} placeholder='User Name' />
               <Field name='email' type='text' component={TextInput} placeholder='E-mail Address' />
               <Field name='plan' type='text' component={SelectInput} options={category} placeholder='Premium Plan' />
               <hr />
@@ -63,4 +63,4 @@ class TestForm extends Component {
     )
   }
 }
-export default connect(mapState, actions)(reduxForm({ form: 'testForm', destroyOnUnmount: false })(TestForm))
+export default connect(mapState, actions)(reduxForm({ form: 'testForm', destroyOnUnmount: true })(TestForm))
