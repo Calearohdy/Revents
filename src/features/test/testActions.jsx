@@ -1,5 +1,17 @@
-import { INCREMENT_COUNTER, DECREMENT_COUNTER, COUNTER_ACTION_FINISHED, COUNTER_ACTION_STARTED } from './testConstants';
+import { INCREMENT_COUNTER, DECREMENT_COUNTER, COUNTER_ACTION_FINISHED, COUNTER_ACTION_STARTED, ADD_USER } from './testConstants';
 import firebase from '../../app/config/firebase'
+
+
+export const addUser = (user) => {
+    return {
+        type: ADD_USER,
+        payload: {
+            user
+        }
+    }
+};
+
+
 
 export const incrementCounter = () => {
     return {

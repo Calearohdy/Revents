@@ -2,6 +2,7 @@ import React from 'react'
 import { Modal } from 'semantic-ui-react';
 import { closeModal } from './modalActions'
 import { connect } from 'react-redux'
+import TestForm from '../test/TestForm';
 
 const actions = {
     closeModal
@@ -9,11 +10,11 @@ const actions = {
 
 const TestModel = ({closeModal}) => {
   return (
-        <Modal closeIcon="close" open={true} onClose={closeModal}>
+        <Modal size="small" closeIcon="close" open={true} onClose={closeModal}>
           <Modal.Header>Test Modal</Modal.Header>
           <Modal.Content>
             <Modal.Description>
-              <p>Test Modal... nothing to see here</p>
+              <TestForm />
             </Modal.Description>
           </Modal.Content>
         </Modal>

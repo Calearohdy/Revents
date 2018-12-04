@@ -1,7 +1,7 @@
 import { Form, Label, Select } from 'semantic-ui-react';
 import React from 'react'
 
-const SelectInput = ({input, type, placeholder, multiple, options, meta: {touched, error}}) => {
+const SelectInput = ({input, type, placeholder, multiple, options, allowAdditions, search, meta: {touched, error}}) => {
   return (
     <Form.Field error={touched && !!error}>
     <Select 
@@ -11,6 +11,8 @@ const SelectInput = ({input, type, placeholder, multiple, options, meta: {touche
         type={type}
         options={options}
         multiple={multiple}
+        allowAdditions={allowAdditions}
+        search={search}
     />
     {touched && error && <Label basic color='red'>{error}</Label>}
      </Form.Field>
