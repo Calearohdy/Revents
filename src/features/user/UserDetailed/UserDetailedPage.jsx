@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import { Grid, Header, Icon, Image, Item, List, Segment} from "semantic-ui-react";
 import { compose } from 'redux'
 import { connect } from 'react-redux';
+import {toastr} from 'react-redux-toastr';
 import { firestoreConnect, isEmpty } from 'react-redux-firebase';
 import { differenceInYears, format } from 'date-fns';
 import { userDetailedQuery } from '../userQueries';
@@ -47,11 +48,16 @@ const actions = {
 class UserDetailedPage extends Component {
 
     async componentDidMount() { // used to actually call method from user action
+        let user = await this.props.firestore.get(`users/${this.props.match.params.id}`)
+        if (!user.exists) {
+            toastr.error('Error', 'User was not found')
+            this.props.history.push('/error')
+        }
         //let events = await this.props.getUserEvents(this.props.userUid); // handles events query to firebase with 2 params, user id and tab
-        let following = await this.props.following;
-        let profile = await this.props.profile;
-        console.log(profile);
-        console.log(following, 'following');
+        // let following = await this.props.following;
+        // let profile = await this.props.profile;
+        // console.log(profile);
+        // console.log(following, 'following');
     }
 
     changeTab = (event, data) => {
@@ -98,7 +104,7 @@ class UserDetailedPage extends Component {
     //     isFollowed = this.isFollowingUser(followed, match)
     //   }
       const isCurrentUser = auth.uid === match.params.id;
-      const loading = Object.values(requesting).some(a => a === true);
+      const loading = requesting[`users/${match.params.id}`]
       const isFollowing = !isEmpty(following)
 
       if (loading) return <LoadingComponent />

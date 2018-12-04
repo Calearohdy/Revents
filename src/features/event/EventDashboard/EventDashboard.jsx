@@ -32,16 +32,14 @@ class EventDashboard extends Component {
         moreEvents: false,
         loadingInitial: true,
         loadedEvents: [],
-        contextRef: []
+        contextRef: {}
     }
 
     async componentDidMount() {
         // If you need to load data from a remote endpoint, this is a good place to instantiate the network request.
         let next = await this.props.getEventsForDashboard();
-        console.log(next)
-        const {events} = this.props;
+        //const {events} = this.props;
 
-        console.log(events)
         // retrieves documents from firebase query
         if (next && next.docs && next.docs.length > 1) { // conditional to check if there will be more events loading in
             this.setState({
@@ -63,10 +61,8 @@ class EventDashboard extends Component {
     getNextEvents = async () => {
         const {events} = this.props; // getting the last of the events so it can start after, and return the next batch
         let lastEvent = events && events[events.length -1]; // checks the previous event in the array
-        console.log(lastEvent)
         
         let next = await this.props.getEventsForDashboard(lastEvent);
-        console.log(next);
         if (next && next.docs && next.docs.length <= 1) { // conditional to check if there will be more events loading in
             this.setState({
                 moreEvents: false // local state management to allow the user to get more events

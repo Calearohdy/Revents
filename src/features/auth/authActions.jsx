@@ -6,8 +6,8 @@ export const login = (creds) => {
     return async (dispatch, getState, {getFirebase}) => {
         const firebase = getFirebase();
         try {
-            let existingUser = await firebase.auth().signInWithEmailAndPassword(creds.email, creds.password)
-            console.log(existingUser)
+            await firebase.auth().signInWithEmailAndPassword(creds.email, creds.password)
+            //console.log(existingUser)
             dispatch(closeModal())
         } catch (error) {
             // console.log(error)

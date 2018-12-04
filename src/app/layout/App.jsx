@@ -8,6 +8,7 @@ import EventForm from '../../features/event/EventForm/EventForm';
 import PeopleDashboard from '../../features/user/PeopleDashboard/PeopleDashboard';
 import SettingsDashboard from '../../features/user/Settings/SettingsDashboard';
 import UserDetailedPage from '../../features/user/UserDetailed/UserDetailedPage';
+import NotFound from '../layout/NotFound';
 import HomePage from '../../features/home/HomePage';
 import TestComponent from '../../features/test/TestComponent';
 import ModalManager from '../../features/modals/ModalManager';
@@ -35,6 +36,8 @@ class App extends Component {
               <Route path='/profile/:id' component={UserIsAuthenticated(UserDetailedPage)} />
               <Route path='/settings' component={UserIsAuthenticated(SettingsDashboard)} />
               <Route path='/createEvent' component={UserIsAuthenticated(EventForm)} />
+              <Route path='/error' component={NotFound} />
+              <Route component={NotFound} />
             </Switch>
 
           </Container>
